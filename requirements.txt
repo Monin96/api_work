@@ -1,1 +1,5 @@
-requests==2.31.0
+requests
+requests-ntlm
+cryptography==3.4.8
+xmltodict
+dotenv

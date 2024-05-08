@@ -1,0 +1,8 @@
+# почитать про .env
+проработать вопрос работы с исключениями - функция dict.get()
+требования к коду
+https://peps.python.org/pep-0008/
+https://peps.python.org/pep-0008/#should-a-line-break-before-or-after-a-binary-operator
+python sqlite/dbeaver https://habr.com/ru/articles/754400/
+при работе с бд - преобразование типов, работа с датами, как преобразовать строку в datetime, date, timedelta
+
