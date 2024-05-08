@@ -1,4 +1,4 @@
-import requests 1
+import requests
 from requests_ntlm import HttpNtlmAuth
 import json
 import xmltodict
