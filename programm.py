@@ -69,7 +69,7 @@ def parsing_dict(request_response_text):
                 "Вес": str(weight),
                 "Цена": int(price),
                 "Диетическое": bool(vegan),
-                "Время": time
+                "Время": str(time)
             }
 
             append_list.append(dish_dict)
