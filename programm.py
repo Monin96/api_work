@@ -1,12 +1,12 @@
 import requests
 from requests_ntlm import HttpNtlmAuth
-import xmltodict
-import json
 import os
 from dotenv import load_dotenv
+import json
+from datetime import datetime
 
 
-def init_user():
+def request_info():
     load_dotenv()
     username = os.getenv("USERNAME")
     password = os.getenv("PASSWORD")
@@ -15,55 +15,12 @@ def init_user():
     return url, username, password, domain
 
 
-def request_get_menu(url, username, password, domain):
-    response = requests.get(
-        url, auth=HttpNtlmAuth(f"{domain}\\{username}", password), verify=False
-    )
+def request_get_data(url, username, password, domain):
+    headers = {'accept': 'application/json', 'content-type': 'application/json;odata=verbose;charset=utf-8'}
+    response = requests.get(url, headers=headers, auth=HttpNtlmAuth(f'{domain}\\{username}', password), verify=False)
     response_text = response.text
     response_status = response.status_code
     return response_text, response_status
-
-
-def convert_xml(response_text):
-    dict_data = xmltodict.parse(response_text)
-    json_data = json.dumps(dict_data)
-    return json_data
-
-
-def convertation_menu(json_data):
-    json_data = json.loads(json_data)
-    json_data = json_data["feed"]["entry"]
-    append_list = []
-
-    for entry in json_data:
-        title = entry["link"][1]["m:inline"]["entry"]["content"]["m:properties"]["d:Title"]
-        name_title = entry["link"][2]["m:inline"]["entry"]["content"]["m:properties"]["d:Title"]
-        dish = entry["content"]["m:properties"]["d:dish"]
-        composition = entry["content"]["m:properties"]["d:composition"]
-        proteins = entry["content"]["m:properties"]["d:proteins"]
-        fats = entry["content"]["m:properties"]["d:fats"]
-        carb = entry["content"]["m:properties"]["d:Carb"]
-        kcal = entry["content"]["m:properties"]["d:Kcal"]
-        weight = entry["content"]["m:properties"]["d:weight"]
-        price = entry["content"]["m:properties"]["d:price"]["#text"]
-
-        dish_json = {
-            "Меню": title,
-            "Тип": name_title,
-            "Блюдо": dish,
-            "Состав": composition,
-            "Белки": proteins,
-            "Жиры": fats,
-            "Углеводы": carb,
-            "Ккал": kcal,
-            "Вес": weight,
-            "Цена": price,
-        }
-
-        append_list.append(dish_json)
-
-    append_list = json.dumps(append_list, ensure_ascii=False)
-    return append_list
 
 
 def create_file_menu(content):
@@ -71,23 +28,68 @@ def create_file_menu(content):
         file.write(content)
 
 
-def main():
-    request_parametrs = init_user()
-    response_menu = request_get_menu(*request_parametrs)
-
-    if response_menu[1] == 200:
-        json_data = convert_xml(response_menu[0])
-        append_list = convertation_menu(json_data)
-        create_file_menu(append_list)
-        print("\n\nФайл подготовлен\n\n")
-        return
-    elif response_menu[1] == 401:
-        create_file_menu("Не авторизован")
-        print("\n\nФайл подготовлен, пользователь неавторизован\n\n")
+def parsing_dict(request_response_text):
+    request_response_dict = json.loads(request_response_text)  # Словарь по всему ответу
+    menu_list = request_response_dict.get("value", "Отсутствует файл меню")  # Лист состоящий из словарей
+    if menu_list == "Отсутствует файл меню":
+        print(menu_list)
         return
     else:
-        create_file_menu(f"Неизвестный код: {response_menu[1]}")
-        print("\n\nФайл подготовлен, но неизвестный статус-код\n\n")
+        menu_string = json.dumps(menu_list)  # Строка
+        menu_dict = json.loads(menu_string)
+        not_found_error = "Не найдено значение в меню"
+        append_list = []
+
+        for i in range(len(menu_dict)):
+            title = menu_dict[i]["Category"].get("Title", not_found_error)
+            name_title = menu_dict[i]["subcategory"].get("Title", not_found_error)
+            dish = menu_dict[i].get("dish", not_found_error)
+            composition = menu_dict[i].get("composition", not_found_error)
+            proteins = menu_dict[i].get("proteins", not_found_error)
+            fats = menu_dict[i].get("fats", not_found_error)
+            carb = menu_dict[i].get("Carb", not_found_error)
+            kcal = menu_dict[i].get("Kcal", not_found_error)
+            weight = menu_dict[i].get("weight", not_found_error)
+            price = menu_dict[i].get("price", not_found_error)
+            time = datetime.now()
+            if int(kcal) <= 300:
+                vegan = True
+            else:
+                vegan = False
+
+            dish_dict = {
+                "Меню": str(title),
+                "Тип": str(name_title),
+                "Блюдо": str(dish),
+                "Состав": str(composition),
+                "Белки": int(proteins),
+                "Жиры": int(fats),
+                "Углеводы": int(carb),
+                "Ккал": int(kcal),
+                "Вес": str(weight),
+                "Цена": int(price),
+                "Диетическое": bool(vegan),
+                "Время": time
+            }
+
+            append_list.append(dish_dict)
+    return append_list
+
+
+def main():
+    request_parameters = request_info()
+    request_answer = request_get_data(*request_parameters)
+    request_status = request_answer[1]
+    request_response_text = request_answer[0]
+
+    if request_status == 200:
+        print(parsing_dict(request_response_text))
+        return
+    elif request_status == 401:
+        print("Пользователь неавторизован\n\n")
+        return
+    else:
+        print("Неизвестный статус-код\n\n")
         return
 
 

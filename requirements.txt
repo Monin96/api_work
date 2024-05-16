@@ -2,4 +2,4 @@ requests
 requests-ntlm
 cryptography==3.4.8
 xmltodict
-dotenv
+python-dotenv

@@ -15,7 +15,7 @@ def init_user():
 
 
 def request_get_menu(url, username, password, domain): 
-    response = requests.get(url, auth=HttpNtlmAuth(f'{domain}\\{username}', password), verify=False)# Заменить на один запрос
+    response = requests.get(url, auth=HttpNtlmAuth(f'{domain}\\{username}', password), verify=False)
     response_text = response.text
     response_status = response.status_code
     return response_text, response_status
@@ -26,10 +26,8 @@ def convert_xml(response_text):
     json_data = json.dumps(dict_data)
     return json_data 
 
-def dict_get(json_data): 
-    json_data = json.loads(json_data) 
-    i = json_data.get("d:dish")
-    print(i)
+def dict_get(json_data):
+    print(json_data)
     return 
 
 def main():

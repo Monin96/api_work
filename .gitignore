@@ -1,4 +1,5 @@
 .env
 venv
-read.txt
+testing_folder/read.txt
 file.txt
+testing_folder
